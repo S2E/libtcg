@@ -52,9 +52,7 @@ typedef uint64_t tcg_target_ulong;
 #error unsupported
 #endif
 
-// TODO: allow multiple targets
 #include "i386/tcg-target.h"
-
 #include "tcg-runtime.h"
 
 #if TCG_TARGET_NB_REGS <= 32
@@ -429,11 +427,13 @@ struct TCGContext {
 
     // CPU state offset information
     uintptr_t env_ptr;
-    unsigned env_offset_eip;
-    unsigned env_sizeof_eip;
+    unsigned env_offset_pc;
+    unsigned env_sizeof_pc;
+#ifdef TARGET_I386
     unsigned env_offset_ccop;
     unsigned env_sizeof_ccop;
     unsigned env_offset_df;
+#endif
     unsigned env_offset_tlb[3]; // Max 3 mem index
 
     unsigned tlbe_size;

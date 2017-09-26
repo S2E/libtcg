@@ -61,8 +61,10 @@ typedef uint32_t target_ulong;
 typedef uint64_t target_ulong;
 #endif
 
+#ifdef TARGET_I386
 // XXX: hack
 #define CC_OP_DYNAMIC 0
+#endif
 
 //#undef NDEBUG
 #define USE_GEPS
@@ -140,8 +142,10 @@ struct TCGLLVMContextPrivate {
     FunctionType *m_tbType;
     Type *m_cpuType;
     Value *m_cpuState;
-    Value *m_eip;
+    Value *m_pc;
+#ifdef TARGET_I386
     Value *m_ccop;
+#endif
 
     typedef DenseMap<unsigned, Value *> GepMap;
     GepMap m_registers;
@@ -225,7 +229,7 @@ public:
 
 #ifdef STATIC_TRANSLATOR
     bool isPcAssignment(Value *v) {
-        return v == m_eip;
+        return v == m_pc;
     }
 
     const TCGLLVMTBInfo &getTbInfo() const {
@@ -330,8 +334,10 @@ TCGLLVMContextPrivate::TCGLLVMContextPrivate(LLVMContext& context)
 
     m_cpuType = NULL;
     m_cpuState = NULL;
-    m_eip = NULL;
+    m_pc = NULL;
+#ifdef TARGET_I386
     m_ccop = NULL;
+#endif
 }
 
 TCGLLVMContextPrivate::~TCGLLVMContextPrivate()
@@ -621,10 +627,14 @@ void TCGLLVMContextPrivate::loadNativeCpuState(Function *f)
     m_cpuState = m_builder.CreateIntToPtr(getValue(0), m_cpuType->getPointerTo(), "state");
 #endif
     /* Reinitialize left overs */
-    m_eip = NULL;
+    m_pc = NULL;
+#ifdef TARGET_I386
     m_ccop = NULL;
-    m_eip = generateCpuStatePtr(m_tcgContext->env_offset_eip, m_tcgContext->env_sizeof_eip);
+#endif
+    m_pc = generateCpuStatePtr(m_tcgContext->env_offset_pc, m_tcgContext->env_sizeof_pc);
+#ifdef TARGET_I386
     m_ccop = generateCpuStatePtr(m_tcgContext->env_offset_ccop, m_tcgContext->env_sizeof_ccop);
+#endif
 }
 
 inline BasicBlock* TCGLLVMContextPrivate::getLabel(int idx)
@@ -673,13 +683,12 @@ void TCGLLVMContextPrivate::startNewBasicBlock(BasicBlock *bb)
 
 inline Value* TCGLLVMContextPrivate::generateCpuStatePtr(TCGArg registerOffset, unsigned sizeInBytes)
 {
-#if defined(USE_GEPS)
+#if defined(USE_GEPS) && defined(TARGET_I386)
     SmallVector<Value*, 3> gepElements;
     if ((registerOffset % (TARGET_LONG_BITS / 8)) != 0) {
         return NULL;
     }
 
-    //XXX: assumes x86
     static unsigned TARGET_LONG_BYTES = TARGET_LONG_BITS / 8;
     Value *ret = NULL;
     if ((registerOffset + sizeInBytes) <= m_tcgContext->env_offset_ccop) {
@@ -696,8 +705,8 @@ inline Value* TCGLLVMContextPrivate::generateCpuStatePtr(TCGArg registerOffset, 
             m_registers[registerOffset] = ret;
         }
     } else if ((registerOffset + sizeInBytes) <= m_tcgContext->env_offset_df) {
-        if (registerOffset == m_tcgContext->env_offset_eip && m_eip) {
-            ret = m_eip;
+        if (registerOffset == m_tcgContext->env_offset_pc && m_pc) {
+            ret = m_pc;
         } else if (registerOffset == m_tcgContext->env_offset_ccop && m_ccop) {
             ret = m_ccop;
         } else {
@@ -1080,7 +1089,7 @@ int TCGLLVMContextPrivate::generateOperation(int opc, const TCGArg *args)
                                                                     \
         if (TARGET_LONG_BITS == memBits                             \
             && args[1] == 0                                         \
-            && args[2] == m_tcgContext->env_offset_eip) {           \
+            && args[2] == m_tcgContext->env_offset_pc) {            \
             valueToStore = handleSymbolicPcAssignment(valueToStore);\
         }                                                           \
                                                                     \
@@ -1499,17 +1508,18 @@ Function *TCGLLVMContextPrivate::generateCode(TCGContext *s)
 
 #if defined(USE_GEPS)
                 TCGArg args[3];
-                args[2] = m_tcgContext->env_offset_eip;
-                generateQemuCpuStore(args, m_tcgContext->env_sizeof_eip * 8, valueToStore);
+                args[2] = m_tcgContext->env_offset_pc;
+                generateQemuCpuStore(args, m_tcgContext->env_sizeof_pc * 8, valueToStore);
 #else
                 Value *ptr = m_builder.CreateAdd(getValue(0),
-                            ConstantInt::get(wordType(), m_tcgContext->env_offset_eip));
+                            ConstantInt::get(wordType(), m_tcgContext->env_offset_pc));
 
-                ptr = m_builder.CreateIntToPtr(ptr, intPtrType(m_tcgContext->env_sizeof_eip * 8));
+                ptr = m_builder.CreateIntToPtr(ptr, intPtrType(m_tcgContext->env_sizeof_pc * 8));
                 m_builder.CreateStore(m_builder.CreateTrunc(
-                        valueToStore, intType(m_tcgContext->env_sizeof_eip * 8)), ptr);
+                        valueToStore, intType(m_tcgContext->env_sizeof_pc * 8)), ptr);
 #endif
 
+#ifdef TARGET_I386
                 if (p->cc_op != CC_OP_DYNAMIC) {
 #if defined(USE_GEPS)
                     args[2] = m_tcgContext->env_offset_ccop;
@@ -1526,6 +1536,7 @@ Function *TCGLLVMContextPrivate::generateCode(TCGContext *s)
                             valueToStore, intType(m_tcgContext->env_sizeof_ccop * 8)), ptr);
 #endif
                 }
+#endif
                 ++p;
             }
         }

@@ -48,9 +48,10 @@
 #endif
 
 #define NO_CPU_IO_DEFS
-
 #include <tcg/cpu.h>
+
 #include <tcg/tcg-op.h>
+
 #include "elf.h"
 #include "tcg-internal.h"
 
