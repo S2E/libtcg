@@ -41,8 +41,10 @@ extern "C" {
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/Threading.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Utils.h>
 
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/FileSystem.h>
@@ -94,7 +96,9 @@ struct TCGLLVMContextPrivate {
     LLVMContext& m_context;
     IRBuilder<> m_builder;
 
-    /* Current m_module */
+    // XXX: hack to satisfy klee
+    std::vector<std::unique_ptr<Module>> m_modules;
+
     Module *m_module;
 
     /* Function pass manager (used for optimizing the code) */
@@ -299,11 +303,14 @@ TCGLLVMContextPrivate::TCGLLVMContextPrivate(LLVMContext& context)
     std::memset(m_globalsIdx, 0, sizeof(m_globalsIdx));
     std::memset(m_labels, 0, sizeof(m_labels));
 
-    m_module = new Module("tcg-llvm", m_context);
+    m_modules.push_back(std::unique_ptr<Module>(new Module("tcg-llvm", m_context)));
+    m_module = m_modules[0].get();
 
     InitializeNativeTarget();
-
+#if false
     std::string error;
+
+    // XXX: gross mishandling of unique_ptr
     ExecutionEngine* engine = EngineBuilder(std::unique_ptr<Module>(m_module))
                               .setErrorStr(&error)
                               .create();
@@ -316,6 +323,7 @@ TCGLLVMContextPrivate::TCGLLVMContextPrivate(LLVMContext& context)
     DataLayout nativeLayout = engine->getDataLayout();
     engine->removeModule(m_module);
     m_module->setDataLayout(nativeLayout);
+#endif
 
     m_functionPassManager = new legacy::FunctionPassManager(m_module);
     m_functionPassManager->add(createReassociatePass());
@@ -1709,9 +1717,9 @@ LLVMContext& TCGLLVMContext::getLLVMContext()
     return m_private->m_context;
 }
 
-Module* TCGLLVMContext::getModule()
+std::vector<std::unique_ptr<llvm::Module>>& TCGLLVMContext::getModules() const
 {
-    return m_private->m_module;
+    return m_private->m_modules;
 }
 
 #ifdef CONFIG_SYMBEX

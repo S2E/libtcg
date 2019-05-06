@@ -905,7 +905,7 @@ void tcg_dump_ops(TCGContext *s, FILE *outfile) {
 #if TCG_TARGET_REG_BITS == 64
                    || c == INDEX_op_movi_i64
 #endif
-                   ) {
+        ) {
             tcg_target_ulong val;
             TCGHelperInfo *th;
 
@@ -1051,7 +1051,7 @@ void tcg_calc_regmask_ex(TCGContext *s, uint64_t *rmask, uint64_t *wmask, uint64
 #if TCG_TARGET_REG_BITS == 64
             || c == INDEX_op_movi_i64
 #endif
-            ) {
+        ) {
             assert(args[0] < s->nb_globals + s->nb_temps);
             temps[args[0]] = args[1];
         } else {

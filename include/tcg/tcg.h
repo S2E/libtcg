@@ -201,11 +201,17 @@ typedef tcg_target_ulong TCGArg;
 
 #ifdef DEBUG_TCGV
 
-typedef struct { int i32; } TCGv_i32;
+typedef struct {
+    int i32;
+} TCGv_i32;
 
-typedef struct { int i64; } TCGv_i64;
+typedef struct {
+    int i64;
+} TCGv_i64;
 
-typedef struct { int iptr; } TCGv_ptr;
+typedef struct {
+    int iptr;
+} TCGv_ptr;
 
 #define MAKE_TCGV_I32(i)              \
     __extension__({                   \

@@ -153,7 +153,7 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y) {
 
         CASE_OP_32_64(or) : return x | y;
 
-        CASE_OP_32_64 (xor) : return x ^ y;
+        CASE_OP_32_64(xor) : return x ^ y;
 
         case INDEX_op_shl_i32:
             return (uint32_t) x << (uint32_t) y;
@@ -270,7 +270,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr, TCGArg
                 : CASE_OP_32_64(mul)
                 : CASE_OP_32_64(and)
                 : CASE_OP_32_64(or)
-                : CASE_OP_32_64 (xor)
+                : CASE_OP_32_64(xor)
                 : CASE_OP_32_64(eqv)
                 : CASE_OP_32_64(nand) : CASE_OP_32_64(nor) : if (temps[args[1]].state == TCG_TEMP_CONST) {
                 tmp = args[1];
@@ -384,7 +384,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr, TCGArg
                 : CASE_OP_32_64(mul)
                 : CASE_OP_32_64(or)
                 : CASE_OP_32_64(and)
-                : CASE_OP_32_64 (xor)
+                : CASE_OP_32_64(xor)
                 : CASE_OP_32_64(shl)
                 : CASE_OP_32_64(shr)
                 : CASE_OP_32_64(sar)

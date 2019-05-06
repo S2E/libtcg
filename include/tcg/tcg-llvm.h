@@ -29,6 +29,9 @@
 #include <inttypes.h>
 
 #ifdef __cplusplus
+#include <memory>
+#include <vector>
+
 extern "C" {
 #endif
 
@@ -46,7 +49,7 @@ struct TCGLLVMRuntime {
     uint64_t helper_ret_addr;
     uint64_t helper_call_addr;
     uint64_t helper_regs[3];
-// END of fixed block
+    // END of fixed block
 
 #ifdef CONFIG_SYMBEX
     /* run-time tb linking mechanism */
@@ -93,7 +96,7 @@ class BasicBlock;
 namespace legacy {
 class FunctionPassManager;
 }
-}
+} // namespace llvm
 
 #ifdef STATIC_TRANSLATOR
 #include <llvm/ADT/SmallVector.h>
@@ -127,7 +130,7 @@ public:
 
     llvm::LLVMContext &getLLVMContext();
 
-    llvm::Module *getModule();
+    std::vector<std::unique_ptr<llvm::Module>> &getModules() const;
     llvm::ModuleProvider *getModuleProvider();
 
     llvm::legacy::FunctionPassManager *getFunctionPassManager() const;

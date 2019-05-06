@@ -305,9 +305,9 @@ static inline int tcg_target_const_match(tcg_target_long val, const TCGArgConstr
 #define JCC_JG 0xf
 
 static const uint8_t tcg_cond_to_jcc[10] = {
-        [TCG_COND_EQ] = JCC_JE,   [TCG_COND_NE] = JCC_JNE, [TCG_COND_LT] = JCC_JL,  [TCG_COND_GE] = JCC_JGE,
-        [TCG_COND_LE] = JCC_JLE,  [TCG_COND_GT] = JCC_JG,  [TCG_COND_LTU] = JCC_JB, [TCG_COND_GEU] = JCC_JAE,
-        [TCG_COND_LEU] = JCC_JBE, [TCG_COND_GTU] = JCC_JA,
+    [TCG_COND_EQ] = JCC_JE,   [TCG_COND_NE] = JCC_JNE, [TCG_COND_LT] = JCC_JL,  [TCG_COND_GE] = JCC_JGE,
+    [TCG_COND_LE] = JCC_JLE,  [TCG_COND_GT] = JCC_JG,  [TCG_COND_LTU] = JCC_JB, [TCG_COND_GEU] = JCC_JAE,
+    [TCG_COND_LEU] = JCC_JBE, [TCG_COND_GTU] = JCC_JA,
 };
 
 #if TCG_TARGET_REG_BITS == 64
@@ -1526,7 +1526,7 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc, const TCGArg *args, 
             goto gen_arith;
             OP_32_64(or) : c = ARITH_OR;
             goto gen_arith;
-            OP_32_64 (xor) : c = ARITH_XOR;
+            OP_32_64(xor) : c = ARITH_XOR;
             goto gen_arith;
         gen_arith:
             if (const_args[2]) {
@@ -1880,7 +1880,10 @@ static int tcg_target_callee_save_regs[] = {
 #if TCG_TARGET_REG_BITS == 64
     TCG_REG_RBP, TCG_REG_RBX, TCG_REG_R12, TCG_REG_R13, TCG_REG_R14, TCG_REG_R15,
 #else
-    TCG_REG_EBP, TCG_REG_EBX, TCG_REG_ESI, TCG_REG_EDI,
+    TCG_REG_EBP,
+    TCG_REG_EBX,
+    TCG_REG_ESI,
+    TCG_REG_EDI,
 #endif
 };
 
